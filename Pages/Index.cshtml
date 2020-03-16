@@ -1,0 +1,211 @@
+﻿@page
+@{}
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Body Mass Index Records Display</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+</head>
+<body>
+    <div>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-secondary">
+            <a class="navbar-brand" href="#">Body Mass Index Records Display</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarText">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item active">
+                        <button class="btn btn-success" data-toggle="modal" data-target="#insert">Insert BMI Record</button>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+        <div class="container" id="bmis">
+        </div>
+    </div>
+    <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-2.0.3.min.js"></script>
+    <script src="https://ajax.aspnetcdn.com/ajax/jquery.templates/beta1/jquery.tmpl.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    <script>
+        var uri = 'api/BMIRecords';
+
+        $(document).ready(function () {
+            // Gets all BMIs
+            $.getJSON(uri)
+                .done(function (data) {
+
+                    $("#temp").tmpl(data).appendTo("#bmis");
+                });
+        });
+        function listBMIS() {
+
+            $.getJSON(uri)
+                .done(function (data) {
+
+                    $("#bmis").text("");
+
+                    $("#temp").tmpl(data).appendTo("#bmis");
+                });
+        }
+        function insert() {
+            var _weight = $('#weight').val();
+            var _height = $('#height').val();
+            var _name = $('#name').val();
+            var bmi = {
+                weight: parseFloat(_weight),
+                height: parseFloat(_height),
+                name: _name
+            };
+            $.ajax({
+                type: "POST",
+                url: uri,
+                data: JSON.stringify(bmi),
+                contentType: "application/json; charset=utf-8"
+            }).done(function (response) {
+                $("#result").html("Inserted ");
+                listBMIS();
+            }).fail(function (jqXHR, textStatus) {
+                $("#result").html("An error .");
+            });
+        }
+        function edit() {
+            var _name = $('#_name').val();
+            var _height = $('#_height').val();
+            var _weight = $('#_weight').val();
+            var bmi = {
+                id: parseInt($('#_id').val()),
+                weight: parseFloat(_weight),
+                height: parseFloat(_height),
+                name: _name
+            };
+            $.ajax({
+                type: "PUT",
+                url: uri + "/" + $('#_id').val(),
+                data: JSON.stringify(bmi),
+                contentType: "application/json; charset=utf-8"
+            }).done(function (response) {
+                $("#resultUpdate").html("modified");
+                listBMIS();
+            }).fail(function (jqXHR, textStatus) {
+                $("#resultUpdate").html(" error");
+            });;
+        }
+        function remove(id) {
+            var yes = confirm("Deleting?");
+            if (yes) {
+                $.ajax({
+                    type: "DELETE",
+                    url: uri + "/" + id,
+
+                }).done(function (response) {
+
+                    listBMIS();
+                });
+            }
+        }
+        function getBMI(id) {
+
+            $.ajax({
+                type: "GET",
+                url: uri + "/" + id,
+                contentType: "application/json"
+            }).done(function (response) {
+
+                $('#_id').val(response.id);
+                $('#_name').val(response.name);
+                $('#_height').val(response.height);
+                $('#_weight').val(response.weight);
+            });
+        }
+    </script>
+    <script id="temp" type="text/x-jquery-tmpl">
+        <div class="card">
+            <div class="card-header">
+                <h4>${name} </h4>
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">Body Mass Index : ${bmi}</h5>
+                <p class="card-text">Height : ${height} m , Weight ${weight} Kg</p>
+                <button class="btn btn-outline-primary" onclick="getBMI('${id}')" data-toggle="modal" data-target="#edit">Edit </button>
+                <a href="#" class="btn btn-outline-danger" onclick="remove('${id}')">Delete Record</a>
+            </div>
+        </div>
+    </script>
+    <div class="modal" tabindex="-1" role="dialog" id="insert">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="form-group">
+                            <label for="model">Name</label>
+                            <input type="text" class="form-control" id="name" aria-describedby="emailHelp">
+
+                        </div>
+                        <div class="form-group">
+                            <label for="name">Height (m)</label>
+                            <input type="number" class="form-control" id="height" aria-describedby="emailHelp">
+
+                        </div>
+                        <div class="form-group">
+                            <label for="model">Weight(Kg)</label>
+                            <input type="number" class="form-control" id="weight" aria-describedby="emailHelp">
+
+                        </div>
+                        <div class="form-group" id="result">
+                        </div>
+                        <button type="button" onclick="insert()" class="btn btn-primary">Insert </button>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal" tabindex="-1" role="dialog" id="edit">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="form-group">
+                            <input type="hidden" class="form-control" id="_id" aria-describedby="emailHelp">
+                        </div>
+                        <div class="form-group">
+                            <label for="model">Name</label>
+                            <input type="text" class="form-control" id="_name" aria-describedby="emailHelp">
+                        </div>
+                        <div class="form-group">
+                            <label for="name">Height(m)</label>
+                            <input type="number" class="form-control" id="_height" aria-describedby="emailHelp">
+                        </div>
+                        <div class="form-group">
+                            <label for="model">Weight (Kg)</label>
+                            <input type="number" class="form-control" id="_weight" aria-describedby="emailHelp">
+                        </div>
+                        <div class="form-group" id="resultUpdate">
+                        </div>
+                        <button type="button" onclick="edit()" class="btn btn-primary">Modify</button>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
